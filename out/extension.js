@@ -27,9 +27,10 @@ function activate(context) {
     }, 1000);
     context.subscriptions.push(vscode_1.commands.registerCommand('extension.searchLuaFun', function () {
         if (vscode_1.window.activeTextEditor) {
-            var funList = getLuaFunctionList();
-            if (funList) {
-                var funMap = getLuaFunctionLine(funList);
+            //var funList = getLuaFunctionList();
+            var funMap = getFunListEx();
+            if (funMap) {
+                var funList = MapToList(funMap);
                 vscode_1.window.showQuickPick(funList).then(function (selected) {
                     if (selected) {
                         if (funMap.has(selected)) {
@@ -118,5 +119,27 @@ function getSelectedLines() {
         }
     }
     return text;
+}
+function getFunListEx() {
+    var retMap = new Map();
+    if (vscode_1.window.activeTextEditor) {
+        var edit = vscode_1.window.activeTextEditor;
+        var maxLine = edit.document.lineCount;
+        for (var index = 0; index < maxLine; index++) {
+            var element = edit.document.lineAt(index).text;
+            var funlist = element.match(/function .*(\w*)/g);
+            if (funlist) {
+                retMap.set(funlist[0], index + 1);
+            }
+        }
+    }
+    return retMap;
+}
+function MapToList(params) {
+    var array = [];
+    params.forEach(function (key, value) {
+        array.push(value);
+    });
+    return array;
 }
 //# sourceMappingURL=extension.js.map

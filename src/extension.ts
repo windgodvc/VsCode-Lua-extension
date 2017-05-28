@@ -47,9 +47,10 @@ export function activate(context: ExtensionContext) {
 
 	context.subscriptions.push(commands.registerCommand('extension.searchLuaFun', () => {
 		if (window.activeTextEditor) {
-			var funList = getLuaFunctionList();
-			if (funList) {
-				var funMap = getLuaFunctionLine(funList);
+			//var funList = getLuaFunctionList();
+			var funMap = getFunListEx();
+			if (funMap) {
+				var funList = MapToList(funMap);
 				window.showQuickPick(funList).then(function (selected) {
 					if(selected){
 						if (funMap.has(selected)) {
@@ -59,6 +60,8 @@ export function activate(context: ExtensionContext) {
 					}
 				});
 			}
+			
+			
 		}
 
 		//
@@ -156,4 +159,31 @@ function getSelectedLines(): string {
 	}
 
 	return text;
+}
+
+function getFunListEx():any {
+	var retMap = new Map();
+
+	if (window.activeTextEditor) {
+		var edit = window.activeTextEditor;
+		var maxLine = edit.document.lineCount;
+		
+		for (var index = 0; index < maxLine; index++) {
+			var element = edit.document.lineAt(index).text;
+			var funlist = element.match(/function .*(\w*)/g);
+			if (funlist) {
+				retMap.set(funlist[0],index + 1);
+			}
+		}
+	}
+
+	return retMap;
+}
+
+function MapToList(params:any):string[] {
+	var array:any[]=[];
+	params.forEach((key,value) => {
+		array.push(value)
+	});
+	return array;
 }
