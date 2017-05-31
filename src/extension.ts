@@ -81,12 +81,6 @@ export function activate(context: ExtensionContext) {
 	}));
 
 
-	var ts = "._currentRoomId=";
-	ts = ts.replace("._","");
-	ts = ts[0].toLocaleUpperCase() + ts.substring(1,ts.length - 1);
-	console.log(ts);
-	
-	console.log(ts.substring(0,ts.indexOf("=")));
 
 	context.subscriptions.push(commands.registerCommand('extension.createTemplate', () => {
 		var language = window.activeTextEditor.document.languageId;
