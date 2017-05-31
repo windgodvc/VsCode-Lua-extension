@@ -294,7 +294,6 @@ iSglobal:any) {
 
 			
 
-			language = "lua"
 			if (language == "lua") {
 				if (iSglobal) {
 					tclassName = (className == "" ? "self":className);
