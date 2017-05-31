@@ -9,12 +9,16 @@ import {
 	StatusBarAlignment, 
 	window, StatusBarItem, 
 	Selection, 
-	// workspace, 
-	// TextEditor, 
+	workspace, 
+	TextEditor, 
+	TextDocument,
+	SnippetString,
 	commands,
 	Position ,
 	TextEditorRevealType 
 } from 'vscode';
+
+//import vscode = require('vscode');
 
 export function activate(context: ExtensionContext) {
 	const status = window.createStatusBarItem(StatusBarAlignment.Right, 100);
@@ -27,7 +31,15 @@ export function activate(context: ExtensionContext) {
 	statusTime.show()
 	context.subscriptions.push(statusTime);
 	
-	
+
+	//  创建  setXX getXX 模板 .
+	const statusCreateSetGetTemplate = window.createStatusBarItem(StatusBarAlignment.Right, 300);
+	statusCreateSetGetTemplate.command = 'extension.createTemplate';
+	statusCreateSetGetTemplate.text = '$(rocket)' + "智能创建模板";
+	statusCreateSetGetTemplate.show()
+	context.subscriptions.push(statusCreateSetGetTemplate);
+
+
 
 	// context.subscriptions.push(window.onDidChangeActiveTextEditor(e => updateStatus(status)));
 	// context.subscriptions.push(window.onDidChangeTextEditorSelection(e => updateStatus(status)));
@@ -65,6 +77,68 @@ export function activate(context: ExtensionContext) {
 		}
 
 		//
+
+	}));
+
+
+	var ts = "._currentRoomId=";
+	ts = ts.replace("._","");
+	ts = ts[0].toLocaleUpperCase() + ts.substring(1,ts.length - 1);
+	console.log(ts);
+	
+	console.log(ts.substring(0,ts.indexOf("=")));
+
+	context.subscriptions.push(commands.registerCommand('extension.createTemplate', () => {
+		var language = window.activeTextEditor.document.languageId;
+		if (language != "lua") {
+			return window.showErrorMessage("当前还未支持此语言 请等待更新加入!");
+		}
+
+		showInputBox("请输入变量前缀(_ or m or m_) 变量此值不可为空,否则无法定位.", "_").then(function (prefix){
+			if (prefix == "") {
+				return window.showErrorMessage("错误此值不可为空,否则无法准确定位成员变量.");
+			}else{
+
+				showInputBox("是否需要首字母大写.(true or false)", "true").then(function(value){
+					var upper = false;
+					if (value == "true") {
+						upper = true;
+					}else if(value == "false"){
+						upper = false;
+					}else{
+						return window.showErrorMessage("错误请准确输入true or false.");
+					}
+					showInputBox("请输入类名(可为空 为空则)","").then(function(classname){
+						showInputBox("请输入此类当前是否为全局或数据结构类型.(true or false)","false").then(function(global){
+							var bglobal = false;
+							if (global == "") {
+								return window.showErrorMessage("错误请准确输入true or false.");
+							}else{
+								bglobal = (global == "true" ? true:false);
+							}
+							
+							
+
+							var maxLine = window.activeTextEditor.document.lineCount;
+							goToLine(maxLine);
+							window.activeTextEditor.insertSnippet(new SnippetString(createTemplateSetAndget(
+								getMemberVariant(".",prefix),
+								classname,
+								prefix,
+								".",
+								upper,
+								bglobal
+							)));
+
+							
+						});
+					});
+				});
+
+			}
+		});
+
+
 
 	}));
 
@@ -186,4 +260,64 @@ function MapToList(params:any):string[] {
 		array.push(value)
 	});
 	return array;
+}
+
+// 1 变量链接方式 . ? ->
+function getMemberVariant(linkWay:string,prefix:string) {
+	var re = window.activeTextEditor.document.getText();
+	console.log(re.match(RegExp(linkWay + prefix + "(.*?)\\s+",'g')));
+	return re.match(RegExp(linkWay + prefix + "(.*?)\\s+",'g'));
+}
+
+function createTemplateSetAndget(
+variantArray:any,
+className:string,
+prefix:string,
+linkWay:string,
+iSUpper:any,
+iSglobal:any) {
+	
+	if (variantArray) {
+		
+		var retText = "\n\n--此代码由VsCode Windgod 插件自动生成 如有些变量不需要可自行删除.\n\n\n";
+		var language = window.activeTextEditor.document.languageId;
+		var tclassName = "";
+		var backupVariant = "";
+		variantArray.forEach(element => {
+			element = element.trim();
+			element = element.replace(linkWay + prefix,"");
+			element = element.replace(";","");
+			backupVariant = element;
+			if (iSUpper) {
+				element = element[0].toLocaleUpperCase() + element.substring(1,element.length);
+			}
+
+			
+
+			language = "lua"
+			if (language == "lua") {
+				if (iSglobal) {
+					tclassName = (className == "" ? "self":className);
+				}else{
+					tclassName = "self";
+				}
+				//  set
+				retText += "--  set" + element + "()\nfunction " + 
+				(className == ""?"":className + ":") + "set" + element + "(element)\n\t" + tclassName + linkWay + prefix + backupVariant + " = element;" + "\nend\n\n";
+				
+				retText += "--  get" + element + "()\nfunction " + 
+				(className == ""?"":className + ":") + "get" + element + "()\n\treturn " + tclassName + linkWay + prefix + backupVariant + ";\nend\n\n";
+
+			}
+
+
+		});
+
+		return retText;
+	}
+	return "";
+}
+
+function showInputBox(hintText:string,defaultv:string) {
+	return window.showInputBox({ prompt: hintText, value: defaultv })
 }

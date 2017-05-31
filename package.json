@@ -25,7 +25,11 @@
 		"commands": [
 			{
 				"command": "extension.searchLuaFun",
-				"title": "Search Lua Function"
+				"title": "Search Lua Function(搜索Lua函数列表)"
+			},
+			{
+				"command": "extension.createTemplate",
+				"title": "smart create template(智能创建模板)"
 			}
 		]
 	},
